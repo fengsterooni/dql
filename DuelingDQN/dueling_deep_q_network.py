@@ -6,9 +6,9 @@ import torch.optim as optim
 import numpy as np
 
 
-class DeepQNetowrk(nn.Module):
+class DuelingDeepQNetowrk(nn.Module):
     def __init__(self, lr, n_actions, name, input_dims, chkpt_dir):
-        super(DeepQNetowrk, self).__init__()
+        super(DuelingDeepQNetowrk, self).__init__()
         self.checkpoint_dir = chkpt_dir
         self.checkpoint_file = os.path.join(self.checkpoint_dir, name)
 
@@ -19,7 +19,8 @@ class DeepQNetowrk(nn.Module):
         fc_input_dims = self.calculate_conv_output_dims(input_dims)
 
         self.fc1 = nn.Linear(fc_input_dims, 512)
-        self.fc2 = nn.Linear(512, n_actions)
+        self.V = nn.Linear(512, 1)
+        self.A = nn.Linear(512, n_actions)
 
         self.optimizer = optim.RMSprop(self.parameters(), lr=lr)
         self.loss = nn.MSELoss()
@@ -41,9 +42,10 @@ class DeepQNetowrk(nn.Module):
 
         conv_state = conv3.view(conv3.size()[0], -1)
         flat1 = F.relu(self.fc1(conv_state))
-        actions = self.fc2(flat1)
+        V = self.V(flat1)
+        A = self.A(flat1)
 
-        return actions
+        return V, A
 
     def save_checkpoint(self):
         print('... saving checkpoint ...')
